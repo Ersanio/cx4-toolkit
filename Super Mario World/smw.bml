@@ -1,0 +1,31 @@
+game
+  label: smw
+  name: smw
+  title: SMW
+  region: NTSC
+  board: HITACHI-LOROM
+    memory
+      type: ROM
+      size: 0x200000
+      content: Program
+    memory
+      type: RAM
+      size: 0x8000
+      content: Save
+    memory
+      type: ROM
+      size: 0xc00
+      content: Data
+      manufacturer: Hitachi
+      architecture: HG51BS169
+      identifier: Cx4
+    memory
+      type: RAM
+      size: 0xc00
+      content: Data
+      manufacturer: Hitachi
+      architecture: HG51BS169
+      identifier: Cx4
+      volatile
+    oscillator
+      frequency: 20000000

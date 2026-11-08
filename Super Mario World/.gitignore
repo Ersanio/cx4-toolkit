@@ -1,0 +1,12 @@
+# ROM and save files
+*.sfc
+*.smc
+*.srm
+
+# Download the latest version of these tools manually
+asar.exe
+Lunar Magic.exe
+
+# Shortcuts and such
+*.lnk
+*.bat
