@@ -32,7 +32,7 @@
             LDA $D4                 ;  |
             ADC #$00                ;  |
             STA.w Cx4.R4+1          ; /
-            %RunProgram(Cx4SMW_Aim) ; Run the aiming routine
+            %Cx4ColdRun(Cx4SMW_Aim) ; Run the aiming routine
             LDA.w Cx4.R5            ; \ $01 = X speed
             STA $01                 ; /
             LDA.w Cx4.R6            ; \ $00 = Y speed

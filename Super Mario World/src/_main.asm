@@ -18,21 +18,27 @@ Vectors:
 ;===============================================================================
 ; NMI & IRQ wrappers are located in WRAM. Cx4 calls and status polling, as well
 ;===============================================================================
-
 WRAM:
 .NMI        incsrc "wram_nmi.asm"
 .IRQ        incsrc "wram_irq.asm"
-.FirmwareExecute
+
+;-------------------------------------------------------------------------------
+; Run the Cx4 program without preloading it. The Cx4 handles the cache miss.
+;
+; In: Y = Program Page >> 9
+;     A = Program Offset >> 1
+;-------------------------------------------------------------------------------
+.Cx4ColdRun
             PHD
-            PEA $7F00              ; Prefer custom dp to save 1 cycle
-            PLD                    ; per status check, compared to abs
+            PEA $7F00
+            PLD
 
 -           BIT.b Cx4.Status
             BVS -
 
-            STY.b Cx4.PageSelect   ; Page low byte / 2
-            STZ.b Cx4.PageSelect+1 ; Page high byte / 2
-            STA.b Cx4.Command      ; Offset into page / 2. Activates the Cx4
+            STY.b Cx4.PageSelect
+            STZ.b Cx4.PageSelect+1
+            STA.b Cx4.Command
 
 -           BIT.b Cx4.Status
             BVS -
@@ -40,27 +46,97 @@ WRAM:
             PLD
             RTL
 
-.FirmwareDMA 
-            ; The Cx4 is capable of its own DMA. Accepted modes:
-            ; - ROM -> Cx4 RAM
-            ; - ROM -> SRAM
-            ; - SRAM <-> Cx4 RAM
-            ; The Cx4 RAM region is specified as $006000-$006BFF
+;-------------------------------------------------------------------------------
+; Run the Cx4 program after preloading the page into
+; a cache page of your choice, first.
+;
+; In: X = 0 or 1 (Cache page 0 or 1 respectively)
+;     Y = Program Page >> 9
+;     A = Program Offset >> 1
+;-------------------------------------------------------------------------------
+.Cx4PreloadedRun
+            PHD
+            PEA $7F00
+            PLD
 
-            ; TODO: Implement
-            NOP
+-           BIT.b Cx4.Status
+            BVS -
+
+            STY.b Cx4.PageSelect
+            STZ.b Cx4.PageSelect+1
+
+            STX.b Cx4.Preload
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            STA.b Cx4.Command
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            PLD
             RTL
 
-.FirmwarePreload ; Preload a specified page into cache
-            ; TODO: Implement
-            NOP
+;-------------------------------------------------------------------------------
+; Preload the Cx4 page into a cache page of your choice.
+;
+; In: X = 0 or 1 (Cache page 0 or 1 respectively)
+;     Y = Program Page >> 9
+;-------------------------------------------------------------------------------
+.Cx4Preload
+            PHD
+            PEA $7F00
+            PLD
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            STY.b Cx4.PageSelect
+            STZ.b Cx4.PageSelect+1
+
+            STX.b Cx4.Preload
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            PLD
+            RTL
+
+;-------------------------------------------------------------------------------
+; Run the Cx4 DMA. Accepted modes:
+;  - ROM   -> Cx4 RAM
+;  - ROM   -> SRAM
+;  - SRAM <-> Cx4 RAM
+;
+; In: A = DMA destination, bank byte
+;     Any value, including the destination bank of $00, starts the DMA
+;-------------------------------------------------------------------------------
+.Cx4DMA 
+            PHD
+            PEA $7F00
+            PLD
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            STA.b Cx4.DMADestination+2
+
+-           BIT.b Cx4.Status
+            BVS -
+
+            PLD
             RTL
 .end
 
-; Call the routines by JSLing to these address definitions
-!Firmware = !FreeRAM+(WRAM_FirmwareExecute-WRAM)
-!FirmwareDMA = !FreeRAM+(WRAM_FirmwareDMA-WRAM)
-!FirmwarePreload = !FreeRAM+(WRAM_FirmwarePreload-WRAM)
+;-------------------------------------------------------------------------------
+; Although you can JSL to these routines, you should use the macros
+; in lib_cx4.asm instead, for reliable Cx4 calling methods
+;-------------------------------------------------------------------------------
+!Cx4ColdRun = !FreeRAM+(WRAM_Cx4ColdRun-WRAM)
+!Cx4PreloadedRun = !FreeRAM+(WRAM_Cx4PreloadedRun-WRAM)
+!Cx4Preload = !FreeRAM+(WRAM_Cx4Preload-WRAM)
+!Cx4DMA = !FreeRAM+(WRAM_Cx4DMA-WRAM)
 
 ;===============================================================================
 ; Implement Cx4 initialization and detection
@@ -82,16 +158,19 @@ InitVectors:
             BPL -
             RTS
 
+print hex(InitWRAMRoutines)
 InitWRAMRoutines:
-            LDX.b #WRAM_end-WRAM-1
+            REP #$10
+            LDX.w #WRAM_end-WRAM-1
 -           LDA.l WRAM,x
             STA !FreeRAM,x
             DEX
             BPL -
+            SEP #$10
             RTS
 
-InitCx4:    ; As (somewhat) seen in Mega Man X3 ($0080C1)
-            PHD
+; As (somewhat) seen in Mega Man X3 ($0080C1)
+InitCx4:    PHD
             PEA $7F00
             PLD
             STZ.b Cx4.ROMConfig
@@ -104,7 +183,7 @@ InitCx4:    ; As (somewhat) seen in Mega Man X3 ($0080C1)
             LDA.b #(!VectorRAM+4)>>8
             STA.b Cx4.IRQ+1
             LDA #$44
-            STA.b Cx4.WaitState
+            STA.b Cx4.WaitState       ; Each ROM and RAM access is throttled with 4 extra cycles each
             LDA #$01
             STA.b Cx4.IRQDisable
             LDA.b #Cx4SMW
@@ -117,20 +196,22 @@ InitCx4:    ; As (somewhat) seen in Mega Man X3 ($0080C1)
             PLD
             RTS
 
-TestCx4:    %RunProgram(Cx4SMW_Checksum) ; Outputs the Cx4 Data ROM checksum at R0
-            LDA Cx4.R0+0 ; outputs 36
+TestCx4:    %Cx4ColdRun(Cx4SMW_Checksum) ; Outputs the Cx4 Data ROM checksum at R0
+            LDA Cx4.R0+0 ; outputs $36
             CMP #$36
             BNE .cksmfailed
-            LDA Cx4.R0+1 ; outputs 43
+            LDA Cx4.R0+1 ; outputs $43
             CMP #$43
             BNE .cksmfailed
-            LDA Cx4.R0+2 ; outputs 05
+            LDA Cx4.R0+2 ; outputs $05
             CMP #$05
             BNE .cksmfailed
 
             LDA $700000                ; Back up SRAM
             TAX
-            %RunProgram(Cx4SMW_SramWrite) ; Check if the Cx4 chip is able to write to SRAM
+            LDA #$00
+            STA $700000                ; Reset the SRAM value
+            %Cx4ColdRun(Cx4SMW_SramWrite) ; Check if the Cx4 chip is able to write to SRAM
             LDA $700000
             CMP #$69                   ; It is expected that that Cx4 routine outputs #$69 at SRAM $700000
             BNE .sramfailed
@@ -142,14 +223,14 @@ TestCx4:    %RunProgram(Cx4SMW_Checksum) ; Outputs the Cx4 Data ROM checksum at 
             RTL
 
 .cksmfailed PEA $001F
-.error	    PLA
-		    STA $2122
-		    PLA
-		    STA $2122
-         	LDA #$0F
-		    STA $2100
-		    LDA #$00
-		    STA $2121
+.error      PLA
+            STA $2122
+            PLA
+            STA $2122
+            LDA #$0F
+            STA $2100
+            LDA #$00
+            STA $2121
             STP
 
 .sramfailed PEA $0FFF

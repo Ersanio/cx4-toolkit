@@ -37,7 +37,7 @@
             STA.w Cx4.R5            ;  | R5 = where to build the table
             LDA.b #!WindowTable>>8  ;  |
             STA.w Cx4.R5+1          ; /
-            %RunProgram(Cx4SMW_Window) ; Run our Cx4 program
+            %Cx4ColdRun(Cx4SMW_Window) ; Run our Cx4 program
 
             LDA #$A0                ; \
             STA $2181               ;  | WRAM address = $7E:04A0
