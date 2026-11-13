@@ -217,8 +217,8 @@ TestCx4:    %Cx4ColdRun(Cx4SMW_Checksum) ; Outputs the Cx4 Data ROM checksum at 
             TXA
             STA $700000                ; Restore SRAM
 
-            STZ $0701 ; \ Restore hijack
-            STZ $0702 ; /
+            LDA #$01
+            STA $1DFC                  ; Restore hijack
             RTL
 
 .cksmfailed PEA $001F
@@ -242,10 +242,10 @@ NewLz2:     incsrc "patches/lz2_cx4.asm"
             ; Here are some more fun ideas:
             ; - Rotating platform/Ball N Chain/Reznor rotations
             ; - Optimize OAM
-            ; - Implement DEFLATE decompression   (into SRAM)
 
 Cx4SMW:     %Cx4Page(0, "cx4 lib/smw 00.asm") ; Windowing HDMA, aiming, Cx4 self tests
             %Cx4Page(1, "cx4 lib/smw 01.asm") ; LC_LZ2 decompression
+Cx4SMW_End: assert (Cx4SMW>>16) == ((Cx4SMW_End-1)>>16), "Cx4 pages cross a bank boundary!"
 
 ;===============================================================================
 ; Call Cx4 initialization and detection
@@ -256,9 +256,9 @@ ORG $008055|!FR ; Hijack the cartridge's init
             PLB
             JSL BootstrapCx4
 
-ORG $0093DA|!FR ; Hijack "Nintendo Presents"
+ORG $0093C0|!FR ; Hijack "Nintendo Presents"
             JSL TestCx4
-            NOP #2
+            NOP
 
 ;===============================================================================
 ; Various upgrades to the game
