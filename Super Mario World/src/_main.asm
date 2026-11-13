@@ -158,7 +158,6 @@ InitVectors:
             BPL -
             RTS
 
-print hex(InitWRAMRoutines)
 InitWRAMRoutines:
             REP #$10
             LDX.w #WRAM_end-WRAM-1
@@ -238,14 +237,15 @@ TestCx4:    %Cx4ColdRun(Cx4SMW_Checksum) ; Outputs the Cx4 Data ROM checksum at 
 
 NewWindow:  incsrc "patches/window_cx4.asm"
 NewAim:     incsrc "patches/aim_cx4.asm"
+NewLz2:     incsrc "patches/lz2_cx4.asm"
 
             ; Here are some more fun ideas:
             ; - Rotating platform/Ball N Chain/Reznor rotations
             ; - Optimize OAM
-            ; - Optimize the LC_LZ2 decompression (into SRAM)
             ; - Implement DEFLATE decompression   (into SRAM)
 
-Cx4SMW:     incsrc "cx4 lib/smw 00.asm"    ; Cx4 page 0
+Cx4SMW:     %Cx4Page(0, "cx4 lib/smw 00.asm") ; Windowing HDMA, aiming, Cx4 self tests
+            %Cx4Page(1, "cx4 lib/smw 01.asm") ; LC_LZ2 decompression
 
 ;===============================================================================
 ; Call Cx4 initialization and detection
@@ -272,6 +272,9 @@ ORG $01BF57|!FR              ; Hijack the Magikoopa's aiming
             LDA #$38         ; \  Originally #$20, new algorithm corrects the aiming
             JSL NewAim       ;  | routine and as a consequence, the projectile
             NOP #2           ; /  now has the same speed regardless of angle
+
+ORG $00B8E3|!FR
+            JML NewLz2
 
 ;===============================================================================
 ; Essential setup for the Cx4 to be detected by the system

@@ -200,7 +200,7 @@ macro Cx4PreloadedRun(label, cache)
 endmacro
 
 ; Preload the Cx4 page into a cache page of your choice.
-macro Cx4Preload(label)
+macro Cx4Preload(label, cache)
             PHY
             PHX
             PHP
@@ -254,4 +254,20 @@ macro Cx4DMA(source, destination, length)
             PLD
             PLP
             PLA
+endmacro
+
+;===============================================================================
+; Wrapper for Cx4 program pages
+;===============================================================================
+
+macro Cx4Page(page, file)
+    arch cx4
+    base (<page>)*$200
+    incsrc <file>
+    assert pc() <= ((<page>)+1)*$200, "Cx4 page ", hex(<page>, 2), " is ", dec(pc()-((<page>)+1)*$200), " bytes over its 512"
+    print "- Cx4 page ", hex(<page>, 2), ": ", dec(((<page>)+1)*$200-pc()), " out of 512 bytes left"
+    fillbyte $FF
+    fill align $200
+    base off
+    arch 65816
 endmacro

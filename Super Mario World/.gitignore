@@ -10,3 +10,7 @@ Lunar Magic.exe
 # Shortcuts and such
 *.lnk
 *.bat
+
+# Lunar Magic-specific files
+sysLMRestore/
+Graphics/

@@ -1,7 +1,7 @@
 ;===============================================================================
 ; Windowing HDMA routine, Cx4 version
 ;
-; Input :
+; Input:
 ;   $00      X center, in pixels
 ;   $01      Y center, in scanlines
 ;   $04-$05  Pointer to the top half shape table
@@ -61,3 +61,5 @@
             LDA #$80                ; \
             TSB $0D9F               ; / Enable HDMA channel 7
             RTL                     ;
+
+undef "WindowTable"

@@ -3,7 +3,7 @@
 ;
 ; The aiming routine is improved and is processed on the Cx4 now.
 ;
-; Input :
+; Input:
 ;   A        Requested speed
 ;   X, Y     Slot of the new magic sprite
 ;

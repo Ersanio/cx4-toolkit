@@ -1,6 +1,3 @@
-arch cx4
-base $0000
-
 ;===============================================================================
 ; Test 3k Data ROM Checksum
 ; Out: R0 ($7F80) = sum of all 3072 data ROM bytes (24-bit): Always $054336
@@ -437,7 +434,3 @@ undef "NewtonTemp"
 undef "ShiftCount"
 undef "ThreeHalves"
 
-fillbyte $FF
-fill align $200
-base off
-arch 65816
