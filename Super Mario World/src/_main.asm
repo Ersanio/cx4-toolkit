@@ -181,8 +181,8 @@ InitCx4:    PHD
             STA.b Cx4.IRQ
             LDA.b #(!VectorRAM+4)>>8
             STA.b Cx4.IRQ+1
-            LDA #$44
-            STA.b Cx4.WaitState       ; Each ROM and RAM access is throttled with 4 extra cycles each
+            LDA.b #($40-(!FastROM<<4))|$04
+            STA.b Cx4.WaitState
             LDA #$01
             STA.b Cx4.IRQDisable
             LDA.b #Cx4SMW

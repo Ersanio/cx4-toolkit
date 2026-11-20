@@ -147,7 +147,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST !RunAddr, A          ;  |
             LD A, #!DeflateFixedRuns ; |
 -           ST DPR, A               ;  |
-            RDRAM 0, #$00           ;  |
+            RDRAM RAMB+0, DPR+$00   ;  |
             LD A, RAMB              ;  | Code length
             AND A, #$07             ;  |
             ADD A, #$04             ;  |
@@ -176,7 +176,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             LD A, !RunValue         ; \
             ST RAMB, A              ;  |
             LD A, !RunAddr          ;  | Write the bytes
--           WRRAM A, 0              ;  |
+-           WRRAM A, RAMB+0         ;  |
             ADD A, #$01             ;  |
             CMPR !RunLast, A        ;  |
             BCS -                   ; /
@@ -210,14 +210,14 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 
             LD A, #$00              ; \
             ST DPR, A               ;  | Read the code length code lengths, 3
--           RDRAM 0, #!DeflateClenOrder ; | bits each. ClenOrder has where each
+-           RDRAM RAMB+0, DPR+!DeflateClenOrder ; | bits each. ClenOrder has where each
             LD A, RAMB              ;  | one goes. (Bits 8-15 of RAMB are 0:
             ST !ClenAddr, A         ;  | it last held a 3-bit value)
             LD A, #$03              ;  |
             JSR P:!GetBits          ;  |
             ST RAMB, A              ;  |
             LD A, !ClenAddr         ;  |
-            WRRAM A, 0              ;  |
+            WRRAM A, RAMB+0         ;  |
             LD A, DPR               ;  |
             ADD A, #$01             ;  |
             ST DPR, A               ;  |
@@ -303,7 +303,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST MDR, A               ;  |
             LD A, !Destination      ;  |
             ST MAR, A               ;  |
-            ST RDRAM, MDR           ;  |
+            ST BUSRAM, MDR           ;  |
             ADD A, #$01             ;  |
             ST !Destination, A      ;  |
             BRA -                   ; /
@@ -379,7 +379,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 ;-------------------------------------------------------------------------------
             LD A, !BuildLens
 -           ST !BuildPtr, A         ; \
-            RDRAM 0, A              ;  | Code length (0: the symbol isn't used)
+            RDRAM RAMB+0, A         ;  | Code length (0: the symbol isn't used)
             LD A, RAMB              ;  |
             AND A, #$0F             ;  |
             BEQ +                   ; /
@@ -397,15 +397,15 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST DPR, A               ;  |
             LD A, #$00              ;  |
             ST !BuildSum, A         ;  |
--           RDRAM 0, #$00           ;  |
-            RDRAM 1, #$01           ;  |
+-           RDRAM RAMB+0, DPR+$00   ;  |
+            RDRAM RAMB+1, DPR+$01   ;  |
             LD A, RAMB              ;  | A = count, !BuildSum = codes so far
             SWAP A, !BuildSum       ;  |
             ST RAMB, A              ;  | T[L] = codes so far
             ADD A, !BuildSum        ;  |
             ST !BuildSum, A         ;  |
-            WRRAM #$00, 0           ;  |
-            WRRAM #$01, 1           ;  |
+            WRRAM DPR+$00, RAMB+0   ;  |
+            WRRAM DPR+$01, RAMB+1   ;  |
             LD A, DPR               ;  |
             ADD A, #$02             ;  |
             ST DPR, A               ;  | Until T[15]. ..Run left !RunLast
@@ -418,7 +418,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 ;-------------------------------------------------------------------------------
             LD A, !BuildLens
 -           ST !BuildPtr, A         ; \
-            RDRAM 0, A              ;  | Code length
+            RDRAM RAMB+0, A         ;  | Code length
             LD A, RAMB              ;  |
             AND A, #$0F             ;  |
             BEQ +                   ; /
@@ -433,8 +433,8 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             SHL A, #$04             ;  |
             OR A, !BuildLen         ;  |
             ST RAMB, A              ;  |
-            WRRAM #$00, 0           ;  |
-            WRRAM #$01, 1           ; /
+            WRRAM DPR+$00, RAMB+0   ;  |
+            WRRAM DPR+$01, RAMB+1   ; /
 +           LD A, !BuildPtr         ; \
             ADD A, #$01             ;  | Next symbol
             CMPR !BuildLast, A      ;  |
@@ -491,9 +491,9 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             LD A, !BitBuf           ; \
             AND A, !Mask9           ;  | Look the next 9 bits up
             ADD A << 1, #!DeflateLitFast ; | (the table is at $000100, IR14)
-            RDRAM 0, A              ;  |
+            RDRAM RAMB+0, A         ;  |
             ADD A, #$01             ;  |
-            RDRAM 1, A              ; /
+            RDRAM RAMB+1, A         ; /
             LD A, RAMB              ; \
             AND A, #$0F             ;  | Remove the code's bits
             ST !CodeLen, A          ;  |
@@ -512,7 +512,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST MDR, A               ;  | 0-255: a literal. Write it
             LD A, !Destination      ;  |
             ST MAR, A               ;  |
-            ST RDRAM, MDR           ;  |
+            ST BUSRAM, MDR           ;  |
             ADD A, #$01             ;  |
             ST !Destination, A      ;  |
             BRA ..Loop              ; /
@@ -551,13 +551,13 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 -           SUB A, !Distance        ; \
             WAIT                    ;  | Start reading the byte
             ST MAR, A               ;  |
-            LD MDR, RDRAM           ; /
+            LD MDR, BUSRAM           ; /
             LD A, !Destination      ; \ While it's being read: where it goes
             ST MAR, A               ;  | (a bus access keeps the address it
             ADD A, #$01             ;  | started with)
             ST !Destination, A      ; /
             WAIT                    ; \ Write it
-            ST RDRAM, MDR           ; /
+            ST BUSRAM, MDR           ; /
             CMPR !CopyLast, A       ; \ Loop if not done yet
             BCS -                   ; /
             BRA ..Loop
@@ -579,12 +579,12 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 ..BaseExtra ST !ExtraBits, A        ; \
             ADD A << 1, !ExtraBits  ;  | DPR = 3 * index
             ST DPR, A               ; /
-            RDRAM 1, #!DeflateCodeTab+2 ; \ Number of extra bits, through bits
+            RDRAM RAMB+1, DPR+!DeflateCodeTab+2 ; \ Number of extra bits, through bits
             LD A, RAMB              ;  | 8-15 of RAMB (bits 16-23 are 0)
             SHR A, #$08             ;  |
             JSR ..GetBits           ; /  GetBits leaves RAMB and DPR alone
-            RDRAM 0, #!DeflateCodeTab ; \
-            RDRAM 1, #!DeflateCodeTab+1 ; | Add the base
+            RDRAM RAMB+0, DPR+!DeflateCodeTab ; \
+            RDRAM RAMB+1, DPR+!DeflateCodeTab+1 ; | Add the base
             ADD A, RAMB             ;  |
             RTS                     ; /
 
@@ -600,9 +600,9 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             LD A, !BitBuf           ; \
             AND A, #$7F             ;  | Look the next 7 bits up
             ADD A << 1, #!DeflateDistFast ; | (the table is at $B00, see top)
-            RDRAM 0, A              ;  |
+            RDRAM RAMB+0, A         ;  |
             ADD A, #$01             ;  |
-            RDRAM 1, A              ; /
+            RDRAM RAMB+1, A         ; /
             LD A, RAMB              ; \
             AND A, #$0F             ;  | Remove the code's bits. GetBits leaves
             JSR ..GetBits           ; /  RAMB alone and !CodeLen = their number
@@ -643,8 +643,8 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             LD A, DPR               ; \
             ADD A, #$02             ;  | RAMB = T[L]
             ST DPR, A               ;  |
-            RDRAM 0, #$00           ;  |
-            RDRAM 1, #$01           ; /
+            RDRAM RAMB+0, DPR+$00   ;  |
+            RDRAM RAMB+1, DPR+$01   ; /
             LD A, !SlowCode         ; \ Below T[L]: found
             CMP A, RAMB             ;  |
             %BCC(+)                 ; /
@@ -654,8 +654,8 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             BRA -                   ; /
 +           ADD A << 1, !SlowTree   ; \
             ST DPR, A               ;  | The entry at that index
-            RDRAM 0, #$20           ;  |
-            RDRAM 1, #$21           ; /
+            RDRAM RAMB+0, DPR+$20   ;  |
+            RDRAM RAMB+1, DPR+$21   ; /
             LD A, RAMB              ; \ A = symbol
             SHR A, #$04             ;  |
             RTS                     ; /
@@ -689,7 +689,7 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 ..Refill    WAIT                    ; Let a pending SRAM write finish first
             LD A, !SourceAddr       ; \
             ST MAR, A               ;  |
-            LD MDR, RDROM           ;  | Read the next byte
+            LD MDR, BUSROM           ;  | Read the next byte
             ADD A, #$01             ;  |
             OR A, #$008000          ;  | $xx:FFFF + 1 = $(xx+1):0000 -> $(xx+1):8000
             ST !SourceAddr, A       ;  |
@@ -721,8 +721,8 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 ..Entry     LD A, DPR               ; \
             CMPR !BuildEnd, A       ;  | No entries left: the code is
             %BCC(..Long)            ; /  incomplete, fill the rest like ..Long
-            RDRAM 0, #$00           ; \
-            RDRAM 1, #$01           ;  | RAMB = entry
+            RDRAM RAMB+0, DPR+$00   ; \
+            RDRAM RAMB+1, DPR+$01   ;  | RAMB = entry
             ADD A, #$02             ;  |
             ST DPR, A               ; /
             LD A, RAMB              ; \
@@ -737,9 +737,9 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST !BuildStep, A        ;  |
             LD A, !BuildHuff        ;  |
             ADD A << 1, !BuildTable ;  |
--           WRRAM A, 0              ;  |
+-           WRRAM A, RAMB+0         ;  |
             ADD A, #$01             ;  |
-            WRRAM A, 1              ;  |
+            WRRAM A, RAMB+1         ;  |
             ADD A, !BuildStep       ;  |
             CMPR !BuildTabLast, A   ;  |
             BCS -                   ; /
@@ -758,8 +758,8 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST !BuildLen, A         ;  | From now on, codes of the index's
             ADD A << 1, !BuildTree  ;  | length
             ST DPR, A               ;  |
-            RDRAM 0, #$00           ;  | RAMB = T[n]
-            RDRAM 1, #$01           ; /
+            RDRAM RAMB+0, DPR+$00   ;  | RAMB = T[n]
+            RDRAM RAMB+1, DPR+$01   ; /
             LD A, RAMB              ; \
             ADD A, #$000100         ;  | Entry: ($120 + T[n]) << 4 | n
             ADD A, #$20             ;  |
@@ -768,9 +768,9 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
             ST RAMB, A              ; /
 -           LD A, !BuildHuff        ; \
             ADD A << 1, !BuildTable ;  | Write it
-            WRRAM A, 0              ;  |
+            WRRAM A, RAMB+0         ;  |
             ADD A, #$01             ;  |
-            WRRAM A, 1              ; /
+            WRRAM A, RAMB+1         ; /
             LD A, RAMB              ; \
             ADD A, #$20             ;  | Next pattern: + 2
             ST RAMB, A              ; /
@@ -808,13 +808,13 @@ assert !DeflateLens+320 <= !DeflateLitTree && !DeflateLitTree+$260 <= $B00, "Def
 .DeflateCount
             ADD A << 1, !BuildTree
             ST DPR, A
-            RDRAM 0, #$00
-            RDRAM 1, #$01
+            RDRAM RAMB+0, DPR+$00
+            RDRAM RAMB+1, DPR+$01
             LD A, RAMB
             ADD A, #$01
             ST RAMB, A
-            WRRAM #$00, 0
-            WRRAM #$01, 1
+            WRRAM DPR+$00, RAMB+0
+            WRRAM DPR+$01, RAMB+1
             RTS
 
 undef "SourceAddr"

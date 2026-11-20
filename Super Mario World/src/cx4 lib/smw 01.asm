@@ -25,7 +25,7 @@
 macro LZ2ReadByte()
             LD A, !SourceAddr       ; \
             ST MAR, A               ;  | Read the ROM byte
-            LD MDR, RDROM           ; /
+            LD MDR, BUSROM           ; /
             ADD A, #$01             ; \
             ST !SourceAddr, A       ;  | Increase offset of compressed data
             AND A, #$008000         ;  |
@@ -56,7 +56,7 @@ endmacro
             %LZ2ReadByte()
             LD A, !Destination
             ST MAR, A
-            ST RDRAM, MDR
+            ST BUSRAM, MDR
             ADD A, #$01
             ST !Destination, A
             CMPR !LastByte, A
@@ -97,7 +97,7 @@ endmacro
 
             LD A, !Destination      ; \
             ST MAR, A               ;  |
--           ST RDRAM, MDR           ;  | Write the byte to the destination
+-           ST BUSRAM, MDR           ;  | Write the byte to the destination
             ADD A, #$01             ;  |
             CMPR !LastByte, A       ;  |
             ST MAR, A               ;  |
@@ -118,14 +118,14 @@ endmacro
             ADD A, !OutputStart     ; !OutputStart += !CopyFrom
 
 -           ST MAR, A               ; \ 
-            LD MDR, RDRAM           ;  |
+            LD MDR, BUSRAM           ;  |
             ADD A, #$01             ;  | Read byte from the SRAM
             ST !CopyFrom, A         ;  |
             LD A, !Destination      ;  |
             WAIT                    ; /
 
             ST MAR, A               ; \
-            ST RDRAM, MDR           ;  |
+            ST BUSRAM, MDR           ;  |
             ADD A, #$01             ;  | Write the byte to the output
             ST !Destination, A      ;  | and update the destination offset
             CMPR !LastByte, A       ;  |
@@ -146,7 +146,7 @@ endmacro
             LD A, !Destination      ; \
             ST MAR, A               ;  |
 -           LD MDR, !Value          ;  |
-            ST RDRAM, MDR           ;  | Write the first byte
+            ST BUSRAM, MDR           ;  | Write the first byte
             ADD A, #$01             ;  |
             CMPR !LastByte, A       ;  | Handle edge case
             ST MAR, A               ;  |
@@ -154,7 +154,7 @@ endmacro
             BMI +                   ; /
 
             LD MDR, !Value2         ; \
-            ST RDRAM, MDR           ;  | Write the second byte
+            ST BUSRAM, MDR           ;  | Write the second byte
             ADD A, #$01             ;  |
             CMPR !LastByte, A       ;  |
             ST MAR, A               ;  |
@@ -171,7 +171,7 @@ endmacro
             %LZ2ReadByte()          ; Read the byte
             LD A, !Destination      ; \
             ST MAR, A               ;  |
--           ST RDRAM, MDR           ;  |
+-           ST BUSRAM, MDR           ;  |
             ADD A, #$01             ;  | Write the byte
             ST !Destination, A      ;  |
             ST MAR, A               ;  |

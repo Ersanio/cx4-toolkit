@@ -118,7 +118,7 @@
             LD A, !Destination
 ..Copy      SUB A, !Distance        ; \
             ST MAR, A               ;  | Read byte from the SRAM
-            LD MDR, RDRAM           ;  |
+            LD MDR, BUSRAM          ;  |
             WAIT                    ; /
             JSR ..PutMDR            ; \
             CMP A, !CopyEnd         ;  | Write the byte to the output
@@ -297,9 +297,9 @@
             LD A, DPR               ; \
             ST RAMB, A              ;  | Write this code length's link: The
             LD A, !LinkAddr         ;  | address where the next one starts
-            WRRAM A, 0              ;  |
+            WRRAM A, RAMB+0         ;  |
             ADD A, #$01             ;  |
-            WRRAM A, 1              ; /
+            WRRAM A, RAMB+1         ; /
             BRA ..NextCodeLength
 
 ;-------------------------------------------------------------------------------
@@ -334,9 +334,9 @@
 ; In:  A    Address
 ; Out: A    The word
 ;-------------------------------------------------------------------------------
-..ReadWord  RDRAM 0, A
+..ReadWord  RDRAM RAMB+0, A
             ADD A, #$01
-            RDRAM 1, A
+            RDRAM RAMB+1, A
             LD A, RAMB
             RTS
 
@@ -350,8 +350,8 @@
 ;-------------------------------------------------------------------------------
 ..PutIndex  LD A, !Index
 ..WriteWord ST RAMB, A
-            WRRAM #$00, 0
-            WRRAM #$01, 1
+            WRRAM DPR+$00, RAMB+0
+            WRRAM DPR+$01, RAMB+1
             LD A, DPR
             ADD A, #$02
             ST DPR, A
@@ -370,16 +370,16 @@
 ..ReadExtra SHL A, #$02             ; \
             ADD A, !Table           ;  | Address of the row
             ST MAR, A               ; /
-            LD MDR, RDROM           ; \
+            LD MDR, BUSROM           ; \
             INC MAR                 ;  |
             WAIT                    ;  |
             LD A, MDR               ;  | Read the base, big endian
-            LD MDR, RDROM           ;  |
+            LD MDR, BUSROM           ;  |
             INC MAR                 ;  |
             WAIT                    ;  |
             OR A << 8, MDR          ;  |
             ST !Value, A            ; /
-            LD MDR, RDROM           ; \
+            LD MDR, BUSROM           ; \
             WAIT                    ;  | Read the number of extra bits
             ST !ExtraBits, MDR      ; /
             LD A, #$00
@@ -416,7 +416,7 @@
 
 ..NextByte  LD A, !SourceAddr       ; \
             ST MAR, A               ;  | Read the ROM byte
-            LD MDR, RDROM           ; /
+            LD MDR, BUSROM          ; /
             ADD A, #$01             ; \  Increase offset of compressed data
             OR A, #$008000          ;  | Bank boundary crossing: $xx:0000
             ST !SourceAddr, A       ; /  becomes $xx:8000
@@ -436,7 +436,7 @@
 ..PutByte   ST MDR, A
 ..PutMDR    LD A, !Destination      ; \
             ST MAR, A               ;  | Write the byte to the destination
-            ST RDRAM, MDR           ; /
+            ST BUSRAM, MDR           ; /
             ADD A, #$01             ; \ Update the destination offset
             ST !Destination, A      ; /
             WAIT

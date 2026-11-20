@@ -45,7 +45,7 @@
             ST MAR, A
             LD A, #$69
             ST MDR, A
-            ST RDRAM, MDR
+            ST BUSRAM, MDR
             WAIT
             STOP
 
@@ -106,8 +106,8 @@
 ..Init      ADD A, !OutputAddr      ; \
             ST DPR, A               ;  | Set A to Cx4 RAM + loop number
             SUB A, !OutputAddr      ; /
-            WRRAM #$00, 0           ; Write $FF
-            WRRAM #$01, 1           ; Write $00
+            WRRAM DPR+$00, RAMB+0   ; Write $FF
+            WRRAM DPR+$01, RAMB+1   ; Write $00
             SUB A, #$02             ; \
             BCS ..Init              ; / Continue loop
 
@@ -184,7 +184,7 @@
 ;-------------------------------------------------------------------------------
 ..DrawLine  ADD A, !ShapeIndex       ; \ Get ROM index to the shape table
             ST MAR, A                ; /
-            LD MDR, RDROM            ; \  Read shape table from ROM
+            LD MDR, BUSROM            ; \  Read shape table from ROM
             WAIT                     ;  |
             LD A, MDR                ; /
             SMUL A, !Radius          ; \ 
@@ -198,7 +198,7 @@
             SKIPCS                   ;  |
             LD A, #$00               ;  | clamped at 0
             ST RAMB, A               ;  |
-            WRRAM #$00, 0            ; /
+            WRRAM DPR+$00, RAMB+0    ; /
 
             LD A, !XCenter           ; \
             ADD A, !HalfWidth        ;  | Right edge = X center + half-width
@@ -206,7 +206,7 @@
             SKIPCC                   ;  |
             LD A, #$FF               ;  | clamped at 255
             ST RAMB, A               ;  |
-            WRRAM #$01, 0            ; /
+            WRRAM DPR+$01, RAMB+0    ; /
 
             RTS
 
