@@ -172,7 +172,8 @@ InitWRAMRoutines:
 InitCx4:    PHD
             PEA $7F00
             PLD
-            STZ.b Cx4.ROMConfig
+            LDA.b #$01
+            STA.b Cx4.ROMConfig
             LDA.b #!VectorRAM
             STA.b Cx4.NMI
             LDA.b #!VectorRAM>>8
